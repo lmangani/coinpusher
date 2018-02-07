@@ -20,7 +20,7 @@ class Stream {
 
     getUrl(port) {
         const location = window.location;
-        return "ws://coinpusher-bitcoin.herokuapp.com";
+        return "wss://coinpusher-bitcoin.herokuapp.com";
     }
 
     connect() {
