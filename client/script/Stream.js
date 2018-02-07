@@ -20,8 +20,7 @@ class Stream {
 
     getUrl(port) {
         const location = window.location;
-        return location.protocol === "https:" ? "wss:" : "ws:" + "//"
-            + location.host;
+        return (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host;
     }
 
     connect() {
