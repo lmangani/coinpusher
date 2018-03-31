@@ -2,7 +2,7 @@
 
 class Stream {
 
-    constructor(url = null, port = 3333, performanceOnly = false){
+    constructor(url = null, port = 3333, performanceOnly = false) {
 
         this.url = url || this.getUrl(port);
         this.performanceOnly = performanceOnly;
@@ -12,70 +12,69 @@ class Stream {
         this.predictionDraw = {};
     }
 
-    resizePlots(){
+    resizePlots() {
         Object.keys(this.plotters)
-        .map(key => this.plotters[key])
-        .forEach(plotter => plotter.resize());
+            .map(key => this.plotters[key])
+            .forEach(plotter => plotter.resize());
     }
 
-    getUrl(port){
+    getUrl(port) {
         const location = window.location;
-        return location.protocol === "https:" ? "wss:" : "ws:" + "//" 
-            + location.hostname + ":" + port;       
+        return (location.protocol === "https:" ? "wss:" : "ws:") + "//" + location.host;
     }
 
-    connect(){
+    connect() {
 
         console.log("connecting..");
         this.connection = new WebSocket(this.url);
-        
+
         this.connection.onopen = () => {
             console.log("connected.");
-            this.connection.send(JSON.stringify({message: "hi"}));
+            this.connection.send(JSON.stringify({ message: "hi" }));
         };
-        
+
         this.connection.onerror = error => {
             console.error(error);
         };
-        
+
         this.connection.onmessage = message => {
-            
+
             let data = message.data;
             try {
                 data = JSON.parse(data);
-            } catch(error){
+            } catch (error) {
                 return console.error("failed to parse message", data, error);
             }
-        
-            if(data.trade){
+
+            if (data.trade) {
                 return this._onTrade(data.currency, data);
             }
 
-            if(data.ctrades){
+            if (data.ctrades) {
                 return this._onConstPrediction(data.currency, data.ctrades);
             }
 
-            if(data.drift){
+            if (data.drift) {
                 //TODO
                 return;
             }
 
-            if(data.resolved){
+            if (data.resolved) {
                 //TODO
                 return;
             }
 
-            if(data.performance){
+            if (data.performance) {
                 return this._onPerformance(data.currency, data.performance);
             }
-        
+
             console.warn("unknown message", data);
         };
     }
 
-    _getOrCreatePlotter(currency){
+    _getOrCreatePlotter(currency) {
 
-        if(this.plotters[currency]){
+        if (this.plotters[currency]) {
             return Promise.resolve(this.plotters[currency]);
         }
 
@@ -86,16 +85,16 @@ class Stream {
             x: [],
             y: []
         }, {
-            x: [],
-            y: []
-        }).then(() => {
-            return plotter;
-        });
+                x: [],
+                y: []
+            }).then(() => {
+                return plotter;
+            });
     }
 
-    _getOrCreatePerformancePlotter(name){
+    _getOrCreatePerformancePlotter(name) {
 
-        if(this.plotters[name]){
+        if (this.plotters[name]) {
             return Promise.resolve(this.plotters[name]);
         }
 
@@ -107,28 +106,28 @@ class Stream {
         });
     }
 
-    timestampToMoment(unix){
+    timestampToMoment(unix) {
         const punix = parseInt(unix);
         return moment.unix(punix);
     }
 
-    momentToDateTime(m){
+    momentToDateTime(m) {
         return m.format("YYYY-MM-DD HH:mm:ss");
     }
 
-    convertTimestamp(unix){
+    convertTimestamp(unix) {
         return this.momentToDateTime(this.timestampToMoment(unix));
     }
 
     //will only return true, if unix timestamp is higher than set for currency
-    checkIfPredictionDrawable(currency, unix){
+    checkIfPredictionDrawable(currency, unix) {
         unix = parseInt(unix);
-        
-        if(!this.predictionDraw[currency]){
+
+        if (!this.predictionDraw[currency]) {
             this.predictionDraw[currency] = unix;
             return true;
         } else {
-            if(this.predictionDraw[currency] >= unix){
+            if (this.predictionDraw[currency] >= unix) {
                 return false;
             } else {
                 this.predictionDraw[currency] = unix;
@@ -136,15 +135,15 @@ class Stream {
             }
         }
     }
-    
-    _onTrade(currency, {trade, predicted}){
-        
-        if(!trade || this.performanceOnly){
+
+    _onTrade(currency, { trade, predicted }) {
+
+        if (!trade || this.performanceOnly) {
             return;
         }
 
         let pred = null;
-        if(predicted){
+        if (predicted) {
 
             //if a prediction is passed along, we have to map syntetic timestamps
             //as it only comes with y axis values
@@ -196,8 +195,8 @@ class Stream {
             plotter.updatePlot({
                 x: [datetime],
                 y: [trade.price]
-            }, 
-            pred
+            },
+                pred
             ).catch(error => {
                 console.error("failed to update plot", error);
             });
@@ -206,9 +205,9 @@ class Stream {
         });
     }
 
-    _onConstPrediction(currency, ctrades){
+    _onConstPrediction(currency, ctrades) {
 
-        if(this.performanceOnly){
+        if (this.performanceOnly) {
             return;
         }
 
@@ -222,36 +221,36 @@ class Stream {
         });
     }
 
-    _onPerformance(currency, {timestamp, expected, reality}){
+    _onPerformance(currency, { timestamp, expected, reality }) {
 
-        if(!this.performanceOnly){
+        if (!this.performanceOnly) {
             return;
         }
 
         this._getOrCreatePerformancePlotter("performance").then(plotter => {
-            
+
             const data = {
                 x: [this.convertTimestamp(timestamp)],
                 y: [reality]
             };
 
-            switch(currency){
+            switch (currency) {
 
-                case "btceur": 
+                case "btceur":
                     plotter.updatePerformancePlot(data, 0);
-                break;
+                    break;
 
                 case "etheur":
                     plotter.updatePerformancePlot(data, 1);
-                break;
+                    break;
 
                 case "ltceur":
                     plotter.updatePerformancePlot(data, 2);
-                break;
+                    break;
 
                 default:
                     console.warn("unknown currency " + currency);
-                break;
+                    break;
             }
         });
     }

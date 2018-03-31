@@ -4,7 +4,7 @@
   "description": "real-time cryptocurrency course prediction with charts front-end",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node index.js bitcoin",
     "explore": "node explore.js",
     "bitcoin": "DEBUG=coinpusher:* node index.js bitcoin",
     "ethereum": "DEBUG=coinpusher:* node index.js ethereum",
